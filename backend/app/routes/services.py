@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status # Tools to build the API
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -9,17 +9,19 @@ from app.models.services.service_tech_map import ServiceTechMap
 from app.models.services.service_offer import ServiceOffering
 from app.models.services.service_offer_map import ServiceOfferingMap
 from app.schemas.Services import ServiceCreate, ServiceResponse, ServiceUpdate
-from app.auth.deps import get_current_user
+from app.auth.deps import get_current_user # To check if the user is logged in
 
+# Setup the router for all service-related links
 router = APIRouter(prefix="/admin/services", tags=["Services"])
 
+# 1. Create a new service
 @router.post("/", response_model=ServiceResponse, status_code=status.HTTP_201_CREATED)
 def create_service(
    payload: ServiceCreate,
    db: Session = Depends(get_db),
    admin = Depends(get_current_user),
 ):
-     # Create core service first (source-of-truth data only)
+     # Step 1: Create the main service record
     service = Service(
         title=payload.title,
         description=payload.description,
@@ -28,33 +30,31 @@ def create_service(
         discount_type=payload.discount_type,
         discount_value=payload.discount_value,
     )
-    # Add to session early to generate service.id
+    # Step 2: Save it temporarily to get an ID
     db.add(service)
     db.flush() # ensures service.id exists before mapping
 
-    # Validate that all provided tech IDs exist
+    # Step 3: Find and check the technologies
     techs = (
         db.query(ServiceTech).filter(ServiceTech.id.in_(payload.tech_ids)).all()
     )
-    # Reject request if any tech ID is invalid
     if len(techs) != len(payload.tech_ids):
         raise HTTPException(
             status_code=400,
             detail="One or more tech IDs are invalid",
         )
     
-    # Validate that all provided offering IDs exist
+    # Step 4: Find and check the offerings
     offerings = (
         db.query(ServiceOffering).filter(ServiceOffering.id.in_(payload.offering_ids)).all()
     )
-    # Reject request if any offering ID is invalid
     if len(offerings) != len(payload.offering_ids):
         raise HTTPException(
             status_code=400,
             detail="One or more offering IDs are invalid",
         )
     
-    # Attach technologies via normalized join table
+    # Step 5: Link the service to the technologies and offerings
     for tech in techs:
         db.add(
             ServiceTechMap(
@@ -63,7 +63,6 @@ def create_service(
             )
         )
 
-    # Attach offerings via normalized join table
     for offering in offerings:
         db.add(
             ServiceOfferingMap(
@@ -91,15 +90,18 @@ def create_service(
     )
 
 # List all services with their tech stacks and offerings
+# 2. Get a list of all services
 @router.get("/", response_model=list[ServiceResponse])
 def list_services(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Get all services from the database
     services = db.query(Service).all()
     responses = []
 
     for service in services:
+        # Step 2: For each service, find its technology names
         techs = (
             db.query(ServiceTech.name)
             .join(ServiceTechMap)
@@ -107,6 +109,7 @@ def list_services(
             .all()
         )
 
+        # Step 3: Find all features (offerings) for this service
         offerings = (
             db.query(ServiceOffering.name)
             .join(ServiceOfferingMap)
@@ -114,6 +117,7 @@ def list_services(
             .all()
         )
 
+        # Step 4: Add the service details to the final list
         responses.append(
             ServiceResponse(
                 id=service.id,
@@ -133,13 +137,14 @@ def list_services(
 
 
 # get service details by id
+# 3. Get details of one specific service
 @router.get("/{service_id}", response_model=ServiceResponse)
 def get_service(
     service_id: UUID,
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
-    # Fetch service or fail fast
+    # Step 1: Find the service in the database
     service = (
         db.query(Service)
         .filter(Service.id == service_id)
@@ -152,6 +157,7 @@ def get_service(
             detail="Service not found",
         )
 
+    # Step 2: Find its technology names
     techs = (
         db.query(ServiceTech.name)
         .join(ServiceTechMap)
@@ -159,6 +165,7 @@ def get_service(
         .all()
     )
 
+    # Step 3: Find its features (offerings)
     offerings = (
         db.query(ServiceOffering.name)
         .join(ServiceOfferingMap)
@@ -180,6 +187,7 @@ def get_service(
     )
 
 
+# 4. Update an existing service
 @router.patch("/{service_id}", response_model=ServiceResponse)
 def update_service(
     service_id: UUID,
@@ -199,13 +207,13 @@ def update_service(
             status_code=404,
             detail="Service not found",
         )
-        # Update only provided scalar fields
+    # Step 1: Update simple fields (title, price, etc.)
     for field, value in payload.model_dump(exclude_unset=True).items():
-        # Relationships handled separately
         if field in ("tech_ids", "offering_ids"):
             continue
         setattr(service, field, value)
 
+    # Step 2: Update the technology list if provided
     if payload.tech_ids is not None:
         # Clear existing tech relations
         db.query(ServiceTechMap).filter(
@@ -233,6 +241,7 @@ def update_service(
                         tech_id=tech.id,
                     )
                 )
+    # Step 3: Update the offerings list if provided
     if payload.offering_ids is not None:
         # Clear existing offering relations
         db.query(ServiceOfferingMap).filter(
@@ -290,18 +299,20 @@ def update_service(
     )
 
 
+# 5. Delete a service
 @router.delete("/{service_id}")
 def delete_service(
     service_id: UUID,
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Find the service in the database
     service = db.query(Service).filter(Service.id == service_id).first()
 
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    # Remove relations first (safe cleanup)
+    # Step 2: Remove the links to technologies and features first
     db.query(ServiceTechMap).filter(
         ServiceTechMap.service_id == service_id
     ).delete()
@@ -310,6 +321,7 @@ def delete_service(
         ServiceOfferingMap.service_id == service_id
     ).delete()
 
+    # Step 3: Delete the service and save changes
     db.delete(service)
     db.commit()
 

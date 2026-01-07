@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID # To handle unique IDs
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -13,17 +13,20 @@ from app.schemas.opportunities import (
     OpportunityUpdate,
     OpportunityResponse,
 )
-from app.auth.deps import get_current_user
+from app.auth.deps import get_current_user # To check if the user is logged in
 
+# Setup the router for all job and internship links
 router = APIRouter(
     prefix="/api/admin/opportunities",
     tags=["Admin Opportunities"],
 )
 
+# Helper function to format the data for the frontend
 def opportunity_response(
     opportunity_obj: Opportunity,
     db: Session,
 ) -> OpportunityResponse:
+    # Step 1: Get all requirements for this opportunity from the database
     requirements = (
         db.query(OpportunityRequirement)
         .filter_by(opportunity_id=opportunity_obj.id)
@@ -34,6 +37,7 @@ def opportunity_response(
     job_details = None
     internship_details = None
 
+    # Step 2: If it's a JOB, find its extra details (like salary)
     if opportunity_obj.type == OpportunityType.JOB:
         job = db.query(JobDetail).filter_by(
             opportunity_id=opportunity_obj.id
@@ -44,6 +48,7 @@ def opportunity_response(
                 "salary_range": job.salary_range,
             }
 
+    # Step 3: If it's an INTERNSHIP, find its extra details (like duration)
     if opportunity_obj.type == OpportunityType.INTERNSHIP:
         internship = db.query(InternshipDetail).filter_by(
             opportunity_id=opportunity_obj.id
@@ -71,11 +76,13 @@ def opportunity_response(
     response_model=OpportunityResponse,
     status_code=status.HTTP_201_CREATED,
 )
+# 1. Create a new Job or Internship
 def create_opportunity(
     payload: OpportunityCreate,
     db: Session = Depends(get_db),
     admin=Depends(get_current_user),
 ):
+    # Step 1: Create the main opportunity record
     new_opportunity = Opportunity(
         title=payload.title,
         description=payload.description,
@@ -83,8 +90,9 @@ def create_opportunity(
         type=payload.type,
     )
     db.add(new_opportunity)
-    db.flush()  # get new_opportunity.id
+    db.flush()  # This generates the ID so we can use it for the details below
 
+    # Step 2: Save the extra details based on the type (Job or Internship)
     if payload.type == OpportunityType.JOB:
         db.add(
             JobDetail(
@@ -103,6 +111,7 @@ def create_opportunity(
             )
         )
 
+    # Step 3: Save all the requirement lines one by one
     for idx, text in enumerate(payload.requirements):
         db.add(
             OpportunityRequirement(
@@ -122,6 +131,7 @@ def create_opportunity(
     "",
     response_model=list[OpportunityResponse],
 )
+# 2. Get a list of all opportunities (with search and filters)
 def list_opportunities(
     type: OpportunityType | None = None,
     location: str | None = None,
@@ -129,13 +139,16 @@ def list_opportunities(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Start with a basic query
     query = db.query(Opportunity)
+
+    # Step 2: Add filters if the user provided them in the URL
     if type is not None:
         query = query.filter(Opportunity.type == type)
 
     if location:
         query = query.filter(
-            Opportunity.location.ilike(f"%{location}%")
+            Opportunity.location.ilike(f"%{location}%") # ilike means "search case-insensitive"
         )
 
     if search:
@@ -143,6 +156,7 @@ def list_opportunities(
             Opportunity.title.ilike(f"%{search}%")
         )
 
+    # Step 3: Get the final list, newest first
     opportunities = query.order_by(
         Opportunity.created_at.desc()
     ).all()
@@ -157,6 +171,7 @@ def list_opportunities(
     "/{opportunity_id}",
     response_model=OpportunityResponse,
 )
+# 3. Get details of one specific opportunity
 def get_opportunity(
     opportunity_id: UUID,
     db: Session = Depends(get_db),
@@ -173,6 +188,7 @@ def get_opportunity(
     "/{opportunity_id}",
     response_model=OpportunityResponse,
 )
+# 4. Update an existing opportunity
 def update_opportunity(
     opportunity_id: UUID,
     payload: OpportunityUpdate,
@@ -183,11 +199,13 @@ def update_opportunity(
     if not opportunity_obj:
         raise HTTPException(status_code=404, detail="Opportunity not found")
 
+    # Step 1: Update the basic fields (title, description, etc.)
     for field in ("title", "description", "location"):
         value = getattr(payload, field)
         if value is not None:
             setattr(opportunity_obj, field, value)
 
+    # Step 2: Update the extra details (Job or Internship)
     if opportunity_obj.type == OpportunityType.JOB and payload.job_details:
         job = db.query(JobDetail).filter_by(
             opportunity_id=opportunity_obj.id
@@ -204,6 +222,7 @@ def update_opportunity(
             internship.duration_months = payload.internship_details.duration_months
             internship.stipend = payload.internship_details.stipend
 
+    # Step 3: Update requirements (we delete the old ones and add the new ones)
     if payload.requirements is not None:
         db.query(OpportunityRequirement).filter_by(
             opportunity_id=opportunity_obj.id
@@ -227,11 +246,13 @@ def update_opportunity(
     "/{opportunity_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+# 5. Delete an opportunity
 def delete_opportunity(
     opportunity_id: UUID,
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    
     opportunity_obj = db.get(Opportunity, opportunity_id)
     if not opportunity_obj:
         raise HTTPException(status_code=404, detail="Opportunity not found")

@@ -1,4 +1,4 @@
-import datetime
+import datetime # To handle dates and times
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -11,11 +11,13 @@ from app.schemas.members import (
     MemberResponse,
     MemberRole,
 )
-from app.auth.deps import get_current_user
+from app.auth.deps import get_current_user # To check if the user is logged in
 
+# Setup the router for all member-related links
 router = APIRouter(prefix="/admin/members", tags=["Members"])
 
 
+# 1. Create a new member (Team or Intern)
 @router.post(
     "",
     response_model=MemberResponse,
@@ -26,7 +28,7 @@ def create_member(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
-    # Create member as a single source-of-truth entity
+    # Step 1: Prepare the member data from the request
     member = Member(
         photo_url=payload.photo_url,
         name=payload.name,
@@ -44,25 +46,29 @@ def create_member(
         updated_at=datetime.datetime.utcnow(),
     )
 
+    # Save the new member to the database
     db.add(member)
     db.commit()
     db.refresh(member)
 
     return member
 
+# 2. Get a list of ALL members
 @router.get("", response_model=list[MemberResponse])
 def list_members(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
-    # Admin view: show all members regardless of visibility
+    # Step 1: Get every member from the database
     return db.query(Member).all()
 
+# 3. Get only the Team members
 @router.get("/teams", response_model=list[MemberResponse])
 def list_team_members(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Get only members who are marked as "TEAM" and are visible
     return (
         db.query(Member)
         .filter(
@@ -72,11 +78,13 @@ def list_team_members(
         .all()
     )
 
+# 4. Get only the Interns
 @router.get("/interns", response_model=list[MemberResponse])
 def list_intern_members(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Get only members who are marked as "INTERN" and are visible
     return (
         db.query(Member)
         .filter(
@@ -86,6 +94,7 @@ def list_intern_members(
         .all()
     )
 
+# 5. Update a member's information
 @router.patch("/{member_id}", response_model=MemberResponse)
 def update_member(
     member_id: UUID,
@@ -93,6 +102,7 @@ def update_member(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Find the member in the database by their ID
     member = (
         db.query(Member)
         .filter(Member.id == member_id)
@@ -104,26 +114,31 @@ def update_member(
             status_code=404,
             detail="Member not found",
         )
+    # Step 2: Update only the fields that were sent in the request
     for field, value in payload.model_dump(
         exclude_unset=True,
         exclude_none=True,
     ).items():
         setattr(member, field, value)
     
+    # Step 3: Update the "updated_at" timestamp to now
     member.updated_at = datetime.datetime.utcnow()
 
+    # Step 4: Save changes to the database
     db.commit()
     db.refresh(member)
 
     return member
 
 
+# 6. Get details of a specific Team member
 @router.get("/team/{member_id}", response_model=MemberResponse)
 def get_team_member(
     member_id: UUID,
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Find the specific team member by their ID
     member = (
         db.query(Member)
         .filter(
@@ -142,12 +157,14 @@ def get_team_member(
 
     return member
 
+# 7. Get details of a specific Intern
 @router.get("/intern/{member_id}", response_model=MemberResponse)
 def get_intern_member(
     member_id: UUID,
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
+    # Step 1: Find the specific intern by their ID
     member = (
         db.query(Member)
         .filter(
@@ -167,6 +184,7 @@ def get_intern_member(
     return member
 
 
+# 8. Get any member by their ID (Admin only)
 @router.get("/{member_id}", response_model=MemberResponse)
 def get_member_admin(
     member_id: UUID,

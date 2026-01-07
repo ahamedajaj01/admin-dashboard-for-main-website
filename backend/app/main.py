@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI # The main tool to build the API
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,14 +11,16 @@ from app.routes import service_tech, service_offering
 from app.routes import members
 from app.routes import projects
 from app.routes import project_feedback
-from app.routes import opportunities
+from app.routes import opportunities # Import all the route files
 
 
 load_dotenv()
 
+# Create the main app
 app = FastAPI(title="Leafclutch backend")
 
 
+# Allow the frontend to talk to the backend (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -29,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Connect all the different route files to the main app
 app.include_router(auth_router)
 app.include_router(training.router)
 app.include_router(mentors.router)

@@ -1,19 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status # Tools to build the API
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.auth.deps import get_current_user
+from app.auth.deps import get_current_user # To check if the user is logged in
 from app.models.services.service_teck import ServiceTech
 from app.schemas.service_tech import (
     ServiceTechCreate,
     ServiceTechResponse,
 )
 
+# Setup the router for technologies (tech stack)
 router = APIRouter(
     prefix="/admin/service-techs",
     tags=["Service Techs"],
 )
 
+# 1. Create a new technology name
 @router.post(
     "",
     response_model=ServiceTechResponse,
@@ -24,7 +26,7 @@ def create_service_tech(
     db: Session = Depends(get_db),
     admin = Depends(get_current_user),
 ):
-    # Prevent duplicate tech names (master data must be unique)
+    # Step 1: Check if this technology name already exists
     existing = (
         db.query(ServiceTech)
         .filter(ServiceTech.name == payload.name)
@@ -37,14 +39,17 @@ def create_service_tech(
             detail="Service tech already exists",
         )
 
+    # Step 2: Create the new technology record
     tech = ServiceTech(name=payload.name)
 
+    # Step 3: Save to database
     db.add(tech)
     db.commit()
     db.refresh(tech)
 
     return tech
 
+# 2. Get a list of all technologies
 @router.get("", response_model=list[ServiceTechResponse])
 def list_service_techs(
     db: Session = Depends(get_db),
