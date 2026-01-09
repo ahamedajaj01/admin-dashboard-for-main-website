@@ -12,6 +12,13 @@ import { serviceService } from "../../services/serviceService";
 import { uploadImageFlow } from "../../utils/cloudinary";
 import { toast } from "sonner";
 
+type SyncableFeedback = {
+  id?: string;
+  client_name: string;
+  feedback_description: string;
+  rating: number;
+};
+
 interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -145,18 +152,25 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
     const syncFeedbacks = async (
       projectId: string,
-      original: Project["feedbacks"],
-      current: ProjectFormData["feedbacks"]
+      original: SyncableFeedback[],
+      current: SyncableFeedback[] | undefined
     ) => {
-      const originalIds = new Set(original.map((f) => f.id));
-      const currentIds = new Set(current.filter((f) => f.id).map((f) => f.id));
+      const currentSafe = current || [];
 
-      const toDelete = original.filter((f) => !currentIds.has(f.id));
-      const toAdd = current.filter((f) => !f.id);
+      const currentIds = new Set(
+        currentSafe.filter((f) => f.id).map((f) => f.id!)
+      );
+
+      const toDelete = (original || []).filter(
+        (f) => f.id && !currentIds.has(f.id)
+      );
+
+      const toAdd = currentSafe.filter((f) => !f.id);
 
       const deletePromises = toDelete.map((f) =>
-        projectService.deleteFeedback(f.id)
+        projectService.deleteFeedback(f.id!)
       );
+
       const addPromises = toAdd.map((f) =>
         projectService.addFeedback(projectId, f)
       );
@@ -197,7 +211,9 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         project = await projectService.create(payload);
         if (data.feedbacks && data.feedbacks.length > 0) {
           await Promise.all(
-            data.feedbacks.map((fb) => projectService.addFeedback(project.id, fb))
+            data.feedbacks.map((fb) =>
+              projectService.addFeedback(project.id, fb)
+            )
           );
         }
       }
