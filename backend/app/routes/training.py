@@ -194,25 +194,27 @@ def update_training(
     training.discount_value = data.discount_value
 
     # Step 2: Replace the benefits list
-    training.benefits.clear() 
-    for benefit_text in data.benefits:
-        training.benefits.append(
-            TrainingBenefit(text=benefit_text)
-        )
+    if data.benefits is not None:
+        training.benefits.clear() 
+        for benefit_text in data.benefits:
+            training.benefits.append(
+                TrainingBenefit(text=benefit_text)
+            )
     
     # Step 3: Replace the mentors list
-    training.training_mentors.clear() 
+    if data.mentor_ids is not None:
+        training.training_mentors.clear() 
 
-    for mentor_id in data.mentor_ids:
-        mentor = db.query(Mentor).filter(Mentor.id == mentor_id).first()
+        for mentor_id in data.mentor_ids:
+            mentor = db.query(Mentor).filter(Mentor.id == mentor_id).first()
 
-        if not mentor:
-            raise HTTPException(400, f"Mentor {mentor_id} does not exist")
-     
+            if not mentor:
+                raise HTTPException(400, f"Mentor {mentor_id} does not exist")
         
-        training.training_mentors.append(
-            TrainingMentor(mentor_id=mentor.id)
-        )
+            
+            training.training_mentors.append(
+                TrainingMentor(mentor_id=mentor.id)
+            )
      # single commit = atomic update
     db.commit()
     db.refresh(training)
