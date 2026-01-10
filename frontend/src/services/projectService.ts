@@ -29,7 +29,6 @@ export const projectService = {
     await api.post(`/admin/projects/${projectId}/feedbacks`, feedback);
   },
 
-  // Fixed based on your documentation
   deleteFeedback: async (feedbackId: string): Promise<void> => {
     await api.delete(`/admin/projects/feedbacks/${feedbackId}`);
   },

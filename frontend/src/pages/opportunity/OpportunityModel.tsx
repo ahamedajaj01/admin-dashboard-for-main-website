@@ -239,7 +239,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({
                     errors.compensation ? "border-red-500" : "border-slate-200"
                   } focus:border-[#3AE39E] outline-none transition-all font-medium`}
                   placeholder={
-                    defaultType === "JOB" ? "e.g. $5,000/mo" : "e.g. $500/mo"
+                    defaultType === "JOB" ? "e.g. रु5,000/mo" : "e.g. रु500/mo"
                   }
                 />
               </div>

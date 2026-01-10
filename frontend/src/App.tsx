@@ -6,11 +6,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import InternPage from "./pages/User/UserPage";
 import Training from "./pages/training/Training";
 import MentorPage from "./pages/mentor/MentorPage";
-import OpportunityPage from "./pages/opportunity/OpportunityPage"; 
+import OpportunityPage from "./pages/opportunity/OpportunityPage";
 import { OpportunityType } from "./types/opportunity";
 import ServicePage from "./pages/service/ServicePage";
 import ProjectPage from "./pages/project/ProjectPage";
 import LogoutConfirm from "./pages/LogoutConfirm";
+import PublicRoute from "./components/PublicRoute";
 
 const App = () => {
   return (
@@ -26,9 +27,9 @@ const App = () => {
       />
 
       <Routes>
-        <Route path="/" element={<Login />} />
-
-        {/* Protected Routes */}
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Login />} />
+        </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route

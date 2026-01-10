@@ -62,14 +62,14 @@ const Sidebar: React.FC = () => {
   return (
     <aside className="hidden w-64 h-screen bg-primary-dark lg:flex flex-col shrink-0 sticky top-0 shadow-xl z-20">
       {/* Logo Area */}
-      <div className="h-20 flex items-center px-4 border-b   border-white/5">
+      <div className="h-20 flex items-center px-2 border-b   border-white/5">
         <div className="flex items-center gap-3">
           <img
             src="/Logo2.png"
             alt="Logo"
             className="h-8 w-8 block"
           />{" "}
-          <h1 className="text-white text-sm font-bold tracking-tight">
+          <h1 className="text-white font-bold tracking-tight">
             Leafclutch Technologies
           </h1>
         </div>

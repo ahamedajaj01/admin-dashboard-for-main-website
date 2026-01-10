@@ -7,15 +7,15 @@ import type { ApiError } from "../../types/api";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "../../schema/authSchema"; 
+import { loginSchema } from "../../schema/authSchema";
 import { z } from "zod";
+import { toast } from "sonner";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [serverError, setServerError] = useState("");
 
   const navigate = useNavigate();
 
@@ -30,7 +30,6 @@ const LoginForm: React.FC = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    setServerError("");
 
     try {
       const response = await api.post("/auth/login", {
@@ -41,20 +40,20 @@ const LoginForm: React.FC = () => {
       const { access_token } = response.data;
       if (access_token) {
         localStorage.setItem("access_token", access_token);
+        toast.success("Login successful!");
         navigate("/dashboard", { replace: true });
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const errorData = err.response?.data as ApiError;
-        if (errorData && errorData.detail) {
-          const message =
-            typeof errorData.detail === "string"
-              ? errorData.detail
-              : errorData.detail[0]?.msg;
-          setServerError(message || "Login failed");
-        }
+        const message =
+          typeof errorData?.detail === "string"
+            ? errorData.detail
+            : errorData?.detail?.[0]?.msg || "Login failed";
+
+        toast.error(message);
       } else {
-        setServerError("Network error. Please check your connection.");
+        toast.error("Network error. Please check your connection.");
       }
     } finally {
       setIsLoading(false);
@@ -83,12 +82,6 @@ const LoginForm: React.FC = () => {
       </div>
 
       <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
-        {(serverError || errors.email || errors.password) && (
-          <div className="p-3 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-lg">
-            {serverError || errors.email?.message || errors.password?.message}
-          </div>
-        )}
-
         {/* Email Field */}
         <div className="space-y-2">
           <label

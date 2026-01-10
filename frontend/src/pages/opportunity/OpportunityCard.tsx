@@ -65,7 +65,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({
               style={{ color: accentColor }}
             />
             <span className="text-sm font-semibold text-slate-700 truncate">
-              {opportunity.type === "INTERNSHIP"
+              रु{opportunity.type === "INTERNSHIP"
                 ? opportunity.internship_details?.stipend
                 : opportunity.job_details?.salary_range || "N/A"}
             </span>
