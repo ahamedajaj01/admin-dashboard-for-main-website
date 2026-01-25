@@ -93,12 +93,16 @@ def update_mentor(
     if not mentor:
         raise HTTPException(status_code=404, detail="Mentor not found")
 
-    # Step 1: Update the name and photo if they were provided
-    if data.name is not None:
-         mentor.name = data.name.strip().lower()
+    # Step 1: Update only the fields that were sent in the request
+    # exclude_unset=True ensures we only update fields that were actually sent
+    # We do NOT exclude None, because we want to allow removing the photo (setting it to null)
+    update_data = data.model_dump(exclude_unset=True)
 
-    if data.photo_url is not None:
-        mentor.photo_url = data.photo_url
+    for field, value in update_data.items():
+        if field == "name" and value:
+            mentor.name = value.strip().lower()
+        else:
+            setattr(mentor, field, value)
 
     # Step 2: Save the updates
     db.commit()
@@ -143,5 +147,3 @@ def delete_mentor(
     db.commit()
 
     return
-
-    
