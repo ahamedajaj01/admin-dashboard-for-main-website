@@ -67,6 +67,7 @@ def opportunity_response(
         type=opportunity_obj.type,
         job_details=job_details,
         internship_details=internship_details,
+        created_at=opportunity_obj.created_at,
         requirements=[r.text for r in requirements],
     )
 
@@ -137,7 +138,7 @@ def list_opportunities(
     location: str | None = None,
     search: str | None = None,
     db: Session = Depends(get_db),
-    admin = Depends(get_current_user),
+    
 ):
     # Step 1: Start with a basic query
     query = db.query(Opportunity)
@@ -175,7 +176,6 @@ def list_opportunities(
 def get_opportunity(
     opportunity_id: UUID,
     db: Session = Depends(get_db),
-    admin = Depends(get_current_user),
 ):
     opportunity_obj = db.get(Opportunity, opportunity_id)
     if not opportunity_obj:
