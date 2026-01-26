@@ -21,6 +21,7 @@ class ServiceCreate(BaseModel):
     offering_ids: List[UUID]
 
     base_price: Decimal
+    enroll_from_price: Optional[Decimal] = None
     discount_type: Optional[DiscountType] = None
     discount_value: Optional[Decimal] = None
 
@@ -34,6 +35,7 @@ class ServiceUpdate(BaseModel):
     offering_ids: Optional[List[UUID]] = None
 
     base_price: Optional[Decimal] = None
+    enroll_from_price: Optional[Decimal] = None
     discount_type: Optional[DiscountType] = None
     discount_value: Optional[Decimal] = None
 
@@ -48,6 +50,7 @@ class ServiceResponse(BaseModel):
     offerings: List[str]
 
     base_price: Decimal
+    enroll_from_price: Optional[Decimal]
     effective_price: Decimal
     created_at: datetime
     updated_at: Optional[datetime]    
