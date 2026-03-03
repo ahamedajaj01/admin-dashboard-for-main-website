@@ -18,7 +18,6 @@ router = APIRouter(
 # 1. Get a list of all mentors
 def list_mentors(
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
 ):
     
     # Step 1: Get all mentors from the database and sort them by name
