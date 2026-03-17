@@ -1,0 +1,68 @@
+# Image Upload Integration ( Public Storage)
+
+## Overview
+We use Supabase Storage (PUBLIC bucket).
+
+- No signed URLs
+- No expiration
+- Simple frontend usage
+
+---
+
+## Flow
+
+### 1. Upload Image
+POST /admin/uploads/image
+
+Response:
+{
+  "image_path": "images/abc123.png"
+}
+
+---
+
+### 2. Create Member
+Send:
+{
+  "name": "John Doe",
+  "photo_url": image_path
+}
+
+---
+
+### 3. Get Member
+Response:
+{
+  "name": "John Doe",
+  "photo_url": "https://yszzpaczugliagkufffu.supabase.co/storage/v1/object/public/admin-dashboard/images/abc123.png"
+}
+
+---
+
+### 4. Frontend
+<img src={member.photo_url} />
+
+---
+
+## Rules
+
+SEND:
+"photo_url": "images/abc.png"
+
+RECEIVE:
+"photo_url": "https://...public url..."
+
+---
+
+
+
+## Example
+
+const path = await uploadImage(file);
+await createMember({ photo_url: path });
+
+<img src={member.photo_url} />
+
+---
+
+Done.

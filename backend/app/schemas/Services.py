@@ -2,9 +2,10 @@ import datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from enum import Enum
 from datetime import datetime
+from app.services.storage_service import resolve_image_url
 
 
 class DiscountType(str, Enum):
@@ -50,4 +51,8 @@ class ServiceResponse(BaseModel):
     base_price: Decimal
     effective_price: Decimal
     created_at: datetime
-    updated_at: Optional[datetime]    
+    updated_at: Optional[datetime]
+
+    @field_serializer('photo_url')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""    
