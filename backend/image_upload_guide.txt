@@ -16,7 +16,7 @@ POST /admin/uploads/image
 
 Response:
 {
-  "image_path": "images/abc123.png"
+  "image_path": "images/{fileId}.{ext}"
 }
 
 ---
@@ -47,12 +47,19 @@ Response:
 ## Rules
 
 SEND:
-"photo_url": "images/abc.png"
+"photo_url": "images/{fileId}.{ext}"
 
 RECEIVE:
 "photo_url": "https://...public url..."
 
 ---
+photo_url returned from backend is FINAL URL
+
+Frontend MUST NOT:
+- modify it
+- prepend base URL
+- extract filename
+- rebuild URL
 
 
 
