@@ -10,6 +10,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET")
+SUPABASE_STORAGE_PRIVATE = os.getenv("SUPABASE_STORAGE_PRIVATE", "true") == "true"
+
 # JWT
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
@@ -24,9 +27,19 @@ APPWRITE_PROJECT_ID = os.getenv("APPWRITE_PROJECT_ID")
 APPWRITE_API_KEY = os.getenv("APPWRITE_API_KEY")
 APPWRITE_BUCKET_ID = os.getenv("APPWRITE_BUCKET_ID")
 
+APPWRITE_ENABLED = all([
+    APPWRITE_ENDPOINT,
+    APPWRITE_PROJECT_ID,
+    APPWRITE_API_KEY,
+    APPWRITE_BUCKET_ID,
+])
+
 # Safety checks (fail fast)
 if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
     raise RuntimeError("Supabase env vars not loaded")
+
+if not SUPABASE_STORAGE_BUCKET:
+    raise RuntimeError("Supabase storage bucket not set")
 
 if not JWT_SECRET:
     raise RuntimeError("JWT_SECRET not set")

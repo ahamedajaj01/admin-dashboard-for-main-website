@@ -1,7 +1,8 @@
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from datetime import datetime
+from app.services.storage_service import resolve_image_url
 
 
 class FeedbackCreate(BaseModel):
@@ -17,6 +18,10 @@ class FeedbackResponse(BaseModel):
     client_photo: Optional[str]
     feedback_description: str
     rating: int
+
+    @field_serializer('client_photo')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""
 
 
 
@@ -49,5 +54,9 @@ class ProjectResponse(BaseModel):
 
     feedbacks: List[FeedbackResponse]
     created_at: datetime
-    updated_at: Optional[datetime]  
+    updated_at: Optional[datetime]
+
+    @field_serializer('photo_url')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""  
     

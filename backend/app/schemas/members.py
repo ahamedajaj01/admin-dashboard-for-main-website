@@ -1,8 +1,9 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from enum import Enum
 from datetime import datetime, date
 from uuid import UUID
+from app.services.storage_service import resolve_image_url
 
 
 
@@ -70,4 +71,8 @@ class MemberResponse(BaseModel):
     is_visible: bool
     role: MemberRole
     created_at: datetime
-    updated_at: Optional[datetime]   
+    updated_at: Optional[datetime]
+    
+    @field_serializer('photo_url')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""   
