@@ -29,7 +29,8 @@ class Service(Base):
     base_price = Column(Numeric(10, 2), nullable=False)
     # Main pricing value
 
-
+    enroll_from_price = Column(Numeric(10, 2), nullable=True)
+    # Enrollment pricing (optional alternative pricing)
 
     discount_type = Column(Enum(DiscountType), nullable=True)
     # Optional discount
