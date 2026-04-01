@@ -1,8 +1,9 @@
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from enum import Enum
 from datetime import datetime
 from uuid import UUID
+from app.services.storage_service import resolve_image_url
 
 
 class DiscountType(str, Enum):
@@ -47,6 +48,10 @@ class MentorResponse(BaseModel):
     name: str
     photo_url: Optional[str]
 
+    @field_serializer('photo_url')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""
+
 
 class TrainingResponse(BaseModel):
     id: str
@@ -62,3 +67,11 @@ class TrainingResponse(BaseModel):
     mentors: List[MentorResponse]
     created_at: datetime
     updated_at: Optional[datetime]
+
+    @field_serializer('photo_url')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""
+
+    @field_serializer('photo_url')
+    def resolve_photo(self, value):
+        return resolve_image_url(value) if value else ""
